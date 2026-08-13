@@ -1,0 +1,30 @@
+# Fires whenever the CI pipeline finishes with a failure, then runs the agents.
+name: Self-Heal
+
+on:
+  workflow_run:
+    workflows: ["CI"]        # must match the `name:` in ci.yml
+    types: [completed]
+
+permissions:
+  contents: write            # push a fix branch
+  pull-requests: write       # open a PR
+  actions: write             # re-run flaky jobs
+
+jobs:
+  heal:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the branch that failed
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+          fetch-depth: 0
+
+      - name: Run the self-healing agents
+        uses: ./                       # use the action in this same repo
+        with:
+          provider: anthropic
+          api-key: ${{ secrets.LLM_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

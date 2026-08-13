@@ -1,0 +1,43 @@
+# Example CI pipeline matching the architecture:
+# build -> security scan -> unit tests. The self-healer triggers when this fails.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build application
+        run: pip install -e ".[dev]"
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Security scan (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          exit-code: "1"                 # fail the build on findings
+          severity: CRITICAL,HIGH
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run unit tests
+        run: |
+          pip install -e ".[dev]"
+          python -m pytest -q

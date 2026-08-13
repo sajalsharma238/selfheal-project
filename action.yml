@@ -1,0 +1,41 @@
+name: "Self-Healing CI/CD"
+description: "Diagnose a failed run with AI agents, verify a fix, and open a PR."
+
+inputs:
+  provider:
+    description: "LLM provider: anthropic | openai | ollama."
+    required: false
+    default: "anthropic"
+  api-key:
+    description: "API key for the provider."
+    required: false
+  github-token:
+    description: "Token with contents:write and pull-requests:write."
+    required: true
+    default: ${{ github.token }}
+  model:
+    description: "Model id."
+    required: false
+    default: "claude-sonnet-5"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install selfheal
+      shell: bash
+      run: pip install "${{ github.action_path }}[anthropic]"
+
+    - name: Run the orchestrator
+      shell: bash
+      env:
+        SELFHEAL_PROVIDER: ${{ inputs.provider }}
+        SELFHEAL_API_KEY: ${{ inputs.api-key }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        SELFHEAL_RUN_ID: ${{ github.event.workflow_run.id }}
+        SELFHEAL_REPO: ${{ github.repository }}
+        SELFHEAL_MODEL: ${{ inputs.model }}
+      run: selfheal run

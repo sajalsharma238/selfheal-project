@@ -1,0 +1,8 @@
+verify:
+  - "python -m pytest -q"
+  - "ruff check ."
+max_attempts: 3
+protected_paths:
+  - "**/secrets*"
+  - "**/*.pem"
+  - ".github/workflows/self-heal.yml"
