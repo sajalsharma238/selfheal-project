@@ -1,0 +1,13 @@
+name: DepGuard dashboard scan
+on: [workflow_dispatch, push]
+jobs:
+  scan:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: DepGuard scan
+        env:
+          DEPGUARD_URL: http://localhost:4000
+          DEPGUARD_TOKEN: ${{ secrets.DEPGUARD_TOKEN }}
+        run: bash ~/Desktop/Depguard/integrations/depguard-scan.sh --project "selfheal-project" --scans sast,secrets --fail-on high
